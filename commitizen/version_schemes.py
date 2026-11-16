@@ -275,14 +275,18 @@ class BaseVersion(_BaseVersion):
     def _get_increment_base(
         self, increment: Increment | None, exact_increment: bool
     ) -> str:
-        if (
-            not self.is_prerelease
-            or exact_increment
-            or (increment == MINOR and self.micro != 0)
-            or (increment == MAJOR and (self.minor != 0 or self.micro != 0))
-        ):
+        if not self.is_prerelease or exact_increment:
+            return self.increment_base(increment)
+        if self._needs_new_base(increment):
             return self.increment_base(increment)
         return f"{self.major}.{self.minor}.{self.micro}"
+
+    def _needs_new_base(self, increment: Increment | None) -> bool:
+        if increment == MINOR:
+            return self.micro != 0
+        if increment == MAJOR:
+            return self.minor != 0 or self.micro != 0
+        return False
 
 
 class Pep440(BaseVersion):
