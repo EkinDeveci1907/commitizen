@@ -61,36 +61,7 @@ class CargoProvider(TomlProvider):
                     cargo_lock_content["package"][i]["version"] = version  # type: ignore[index]
                     break
         except NonExistentKey:
-            workspace = cargo_toml_content.get("workspace", {})
-            if TYPE_CHECKING:
-                assert isinstance(workspace, dict)
-            workspace_members = workspace.get("members", [])
-            excluded_workspace_members = workspace.get("exclude", [])
-            members_inheriting: list[str] = []
-
-            for member in workspace_members:
-                for path in glob.glob(member, recursive=True):
-                    if any(
-                        fnmatch.fnmatch(path, pattern)
-                        for pattern in excluded_workspace_members
-                    ):
-                        continue
-
-                    cargo_file = Path(path) / "Cargo.toml"
-                    package_content = parse(
-                        cargo_file.read_text(encoding=self._get_encoding())
-                    ).get("package", {})
-                    if TYPE_CHECKING:
-                        assert isinstance(package_content, dict)
-                    version_field = package_content.get("version")
-                    if (
-                        isinstance(version_field, dict)
-                        and version_field.get("workspace") is True
-                    ):
-                        package_name = package_content["name"]
-                        if TYPE_CHECKING:
-                            assert isinstance(package_name, str)
-                        members_inheriting.append(package_name)
+            members_inheriting = self._get_inheriting_members(cargo_toml_content)
 
             for i, package in enumerate(packages):
                 if package["name"] in members_inheriting:
@@ -99,6 +70,40 @@ class CargoProvider(TomlProvider):
         self.lock_file.write_text(
             dumps(cargo_lock_content), encoding=self._get_encoding()
         )
+
+    def _get_inheriting_members(self, cargo_toml_content: TOMLDocument) -> list[str]:
+        workspace = cargo_toml_content.get("workspace", {})
+        if TYPE_CHECKING:
+            assert isinstance(workspace, dict)
+        workspace_members = workspace.get("members", [])
+        excluded_workspace_members = workspace.get("exclude", [])
+        members_inheriting: list[str] = []
+
+        for member in workspace_members:
+            for path in glob.glob(member, recursive=True):
+                if any(
+                    fnmatch.fnmatch(path, pattern)
+                    for pattern in excluded_workspace_members
+                ):
+                    continue
+
+                cargo_file = Path(path) / "Cargo.toml"
+                package_content = parse(
+                    cargo_file.read_text(encoding=self._get_encoding())
+                ).get("package", {})
+                if TYPE_CHECKING:
+                    assert isinstance(package_content, dict)
+                version_field = package_content.get("version")
+                if (
+                    isinstance(version_field, dict)
+                    and version_field.get("workspace") is True
+                ):
+                    package_name = package_content["name"]
+                    if TYPE_CHECKING:
+                        assert isinstance(package_name, str)
+                    members_inheriting.append(package_name)
+
+        return members_inheriting
 
 
 def _try_get_workspace(document: TOMLDocument) -> dict:
