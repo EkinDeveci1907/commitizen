@@ -63,12 +63,13 @@ class Version:
             out.write(__version__)
             return
 
-        if (
+        needs_project_version = (
             self.arguments.get("project")
             or self.arguments.get("verbose")
             or self.arguments.get("next")
             or self.arguments.get("manual_version")
-        ):
+        )
+        if needs_project_version:
             # TODO: once `cz --version` is implemented, move `self.cz` back to __init__
             self.cz = factory.committer_factory(self.config)
 
