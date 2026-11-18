@@ -253,7 +253,6 @@ cz changelog --help
 
 For more details, visit our [documentation site](https://commitizen-tools.github.io/commitizen/).
 
-## Setting up bash completion
 ## Building from source
 
 You need Python 3.10 or newer and Git.
@@ -269,6 +268,8 @@ pytest
 ```
 
 On Windows, activate the environment with `.venv\Scripts\activate` instead.
+
+## Setting up bash completion
 
 Commitizen supports command-line completion through [argcomplete](https://kislyuk.github.io/argcomplete/), which is automatically installed as a dependency. This feature provides intelligent auto-completion for all Commitizen commands and options.
 
